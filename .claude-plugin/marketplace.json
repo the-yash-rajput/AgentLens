@@ -1,0 +1,14 @@
+{
+  "name": "agentlens",
+  "description": "AgentLens: root-cause AI agent failures from a Zendesk ticket.",
+  "owner": {
+    "name": "Turtlemint AI"
+  },
+  "plugins": [
+    {
+      "name": "agentlens",
+      "source": "./",
+      "description": "Root-cause a production issue from its Zendesk ticket ID, without the DRM repo."
+    }
+  ]
+}

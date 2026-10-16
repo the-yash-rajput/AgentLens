@@ -1,0 +1,51 @@
+{
+  "name": "agentlens",
+  "displayName": "AgentLens",
+  "version": "0.1.0",
+  "description": "Root-cause a production issue from its Zendesk ticket ID: Zendesk, Langfuse, Sentry and the cross-service map, from any machine.",
+  "homepage": "https://github.com/the-yash-rajput/AgentLens",
+  "repository": "https://github.com/the-yash-rajput/AgentLens",
+  "author": {
+    "name": "Turtlemint AI"
+  },
+  "keywords": ["rca", "zendesk", "langfuse", "sentry", "agent-crafter"],
+  "userConfig": {
+    "zendesk_subdomain": {
+      "type": "string",
+      "title": "Zendesk subdomain",
+      "description": "The part before .zendesk.com.",
+      "default": "turtlemintsupport"
+    },
+    "zendesk_email": {
+      "type": "string",
+      "title": "Zendesk email (API token only)",
+      "description": "Leave empty when the token below is an OAuth token. Fill in your Zendesk login email only if you use an API token."
+    },
+    "zendesk_token": {
+      "type": "string",
+      "title": "Zendesk token",
+      "description": "A read-scoped OAuth token from a Zendesk admin (preferred), or an API token.",
+      "required": true,
+      "sensitive": true
+    },
+    "langfuse_host": {
+      "type": "string",
+      "title": "Langfuse host",
+      "description": "Base URL of the Langfuse instance, no trailing slash.",
+      "default": "https://langfuse-v3.sre.turtle-infra.com"
+    },
+    "langfuse_public_key": {
+      "type": "string",
+      "title": "Langfuse public key",
+      "description": "The pk-lf-... half of the RCA key pair.",
+      "required": true
+    },
+    "langfuse_secret_key": {
+      "type": "string",
+      "title": "Langfuse secret key",
+      "description": "The sk-lf-... half of the RCA key pair.",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}
