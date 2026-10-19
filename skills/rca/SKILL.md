@@ -103,7 +103,7 @@ If the user can't pull logs either (ops usually can't), put that minimal ask und
 
 Read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/repo-map.md`. For anything between Zendesk, hcv2 and DRM (triggers, routing, the classification config table, AB experiments), also read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/email_flow.md` (email tickets) or `api_flow.md` (Help Center tickets). Each ends with a code map. Once Sources 1-5 point at a specific boundary (e.g. "DRM sent extraction request, hcv2 never got the reply"), use them to find the actual sibling repo code:
 - hcv2, data-extraction-be, turtle-configs, sre-tools — repos, branches, verified queue/API links all documented there.
-- Read code only where the user has the repo cloned: ask once for the local path. For deep dives, spawn one fresh `general-purpose` subagent per suspect repo with a self-contained prompt: repo path, the exact symptom, correlation ID, and what Sources 1-5 already established. Launch in parallel if multiple repos are implicated.
+- Never clone a repo; most users (ops, support) don't have git access, and the RCA must not depend on it. Read code only when the session is already running inside a checkout of that repo or the user offers a local path unasked. For deep dives, spawn one fresh `general-purpose` subagent per suspect repo with a self-contained prompt: repo path, the exact symptom, correlation ID, and what Sources 1-5 already established. Launch in parallel if multiple repos are implicated.
 - Without a clone, cite the files from the map and the code maps, and name the repo that owns the fix.
 
 ## Synthesis
