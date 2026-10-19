@@ -58,11 +58,11 @@ See the `/rca` skill. Short version: identify DRM entry point first (queue/endpo
 
 ## Verified: how a classified Zendesk ticket reaches the payout agent
 
-> Trigger IDs in this section are as of 2026-08-26. `api_flow.md` has the IDs read on 2026-10-13, and some differ: "(AI) Prod HC Classification Communication" is `61994704544793` there.
+> Found 2026-08-26; trigger IDs updated to match `api_flow.md` (read from Zendesk on 2026-10-13). When they disagree, `api_flow.md` is newer.
 
 Confirmed during RCA of ticket 7116515 (2026-08-26). Classification and answering are two separate agent invocations, joined **through Zendesk**, not in process — `SupportTicketServiceImpl.processClassification` writes fields/assignee to the ticket and publishes nothing to any queue.
 
-1. **Ticket -> classification.** Trigger `(AI) Prod HC Classification Communication` (`49408454978201`) -> webhook `01JQ98TJQYY5ZRGD66DYMB6PMD` (*PROD HCV2 WebhooK - AI Agent Service*, `https://helpcenter.turtlemintinsurance.com/api/helpcenter/v2/webhook/zendesk/ai-agent`) -> hcv2 `ZendeskTicketServiceImpl.consumeWebhook` -> `processRawData` -> `ZendeskAiRoutingService.resolveRoutingDecision` -> RabbitMQ -> DRM `Payout Classification Agent`.
+1. **Ticket -> classification.** Trigger `(AI) Prod HC Classification Communication` (`61994704544793`; was `49408454978201` on 2026-08-26) -> webhook `01JQ98TJQYY5ZRGD66DYMB6PMD` (*PROD HCV2 WebhooK - AI Agent Service*, `https://helpcenter.turtlemintinsurance.com/api/helpcenter/v2/webhook/zendesk/ai-agent`) -> hcv2 `ZendeskTicketServiceImpl.consumeWebhook` -> `processRawData` -> `ZendeskAiRoutingService.resolveRoutingDecision` -> RabbitMQ -> DRM `Payout Classification Agent`.
 2. **DRM writes back.** Internal note posted first, then (~1s later) classification field `114098121414`, sub-process `38306575147545`, `48135901301273` = `<classification>_clone`, assignee -> AI user `21993895643033`, tag `ai_classified`.
 3. **Classification -> payout agent.** A second trigger must observe that write. For Help-Center tickets (`via_id = 5`) that is `Prod Classification Consumption(Channel API)` (`61552285627929`), live since ~11:53 UTC 2026-08-26. The legacy triggers `43820058757401` / `48967242563225` both carry `via_id is_not 5` (email only); the previous API-channel trigger `47936129051417` was disabled 2026-08-07.
 

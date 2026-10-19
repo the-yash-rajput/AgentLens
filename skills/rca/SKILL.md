@@ -120,5 +120,5 @@ The report has three parts, in this order:
    - Evidence: cite the specific audit event / trigger condition / trace observation / export node / Sentry event / log line that proves it — don't hand-wave.
    - Fix owner: which repo this needs to be fixed in (or the agent and version, for an Agent Crafter fix).
    - Not checked: each source you couldn't reach and why (not configured, not connected, 401/403, export or logs not provided), plus the minimal ask for a developer.
-   - Repo-map additions: any new DRM ↔ sibling-repo link (queue, endpoint, config key) confirmed during this RCA — verified facts only — so a maintainer can add it to the plugin's repo map.
+   - Repo-map additions: any new DRM ↔ sibling-repo link (queue, endpoint, config key) confirmed during this RCA — verified facts only — and any fact in the references that turned out stale (an ID, a trigger condition). When there are any, end the report with a ready-to-paste GitHub issue for `the-yash-rajput/AgentLens`: title `Repo-map: <one-line summary> (ticket <id>)`, body listing each fact, its evidence and the reference file it belongs in. The maintainer folds open issues into the references at each release.
 

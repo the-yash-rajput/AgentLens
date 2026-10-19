@@ -1,6 +1,6 @@
 #!/bin/bash
 # Pull full detail for one Zendesk ticket: ticket fields, conversation, audit trail
-# (incl. which triggers/automations fired), satisfaction rating, metrics, requester/org.
+# (incl. which triggers/automations fired), metrics. The CSAT rating is in the ticket object.
 # Usage: ./zendesk_ticket_review.sh <ticket_id>
 # Credentials: AGENTLENS_ZENDESK_* from the AgentLens plugin settings (see scripts/export-env.sh).
 
@@ -13,10 +13,8 @@ fi
 
 TICKET_ID="$1"
 
-if [ -z "$AGENTLENS_ZENDESK_SUBDOMAIN" ] || [ -z "$AGENTLENS_ZENDESK_TOKEN" ]; then
-    echo "Error: Zendesk isn't configured. Set it in /plugin → agentlens → Configure, then start a new session."
-    exit 1
-fi
+. "$(dirname "${BASH_SOURCE[0]}")/../../scripts/require_settings.sh"
+require_settings "Zendesk subdomain=AGENTLENS_ZENDESK_SUBDOMAIN" "Zendesk token=AGENTLENS_ZENDESK_TOKEN"
 
 BASE="https://${AGENTLENS_ZENDESK_SUBDOMAIN}.zendesk.com/api/v2"
 # An email means an API token; no email means an OAuth token (read-scoped for ops).
@@ -56,6 +54,3 @@ api_all "/tickets/${TICKET_ID}/audits.json" audits | jq '.'
 
 echo "=== METRICS (SLA / reply times) ==="
 api "/tickets/${TICKET_ID}/metrics.json" | jq '.ticket_metric'
-
-echo "=== SATISFACTION RATING ==="
-api "/tickets/${TICKET_ID}.json" | jq '.ticket.satisfaction_rating'

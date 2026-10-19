@@ -12,10 +12,8 @@ if [ -z "$2" ]; then
     exit 1
 fi
 
-if [ -z "$AGENTLENS_ZENDESK_SUBDOMAIN" ] || [ -z "$AGENTLENS_ZENDESK_TOKEN" ]; then
-    echo "Error: Zendesk isn't configured. Set it in /plugin → agentlens → Configure, then start a new session."
-    exit 1
-fi
+. "$(dirname "${BASH_SOURCE[0]}")/../../scripts/require_settings.sh"
+require_settings "Zendesk subdomain=AGENTLENS_ZENDESK_SUBDOMAIN" "Zendesk token=AGENTLENS_ZENDESK_TOKEN"
 
 BASE="https://${AGENTLENS_ZENDESK_SUBDOMAIN}.zendesk.com/api/v2"
 # An email means an API token; no email means an OAuth token (read-scoped for ops).

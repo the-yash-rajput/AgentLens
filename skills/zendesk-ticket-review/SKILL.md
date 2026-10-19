@@ -23,7 +23,7 @@ Credentials come from the AgentLens plugin settings, which Claude Code asks for 
 - `GET /tickets/{id}/comments.json` — full conversation (public + internal notes), in order, with author and timestamp. Every page, not just the first 100.
 - `GET /tickets/{id}/audits.json` — the complete change/event history, every page. **This is where trigger/automation firing shows up.**
 - `GET /tickets/{id}/metrics.json` — first reply time, full resolution time, reopens, SLA breach info.
-- `.ticket.satisfaction_rating` — CSAT score/comment if the requester rated the ticket.
+- CSAT: `satisfaction_rating` inside the ticket object, if the requester rated the ticket.
 
 ## How to read the audit trail for triggers
 

@@ -13,10 +13,9 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ -z "$AGENTLENS_LANGFUSE_HOST" ] || [ -z "$AGENTLENS_LANGFUSE_PUBLIC_KEY" ] || [ -z "$AGENTLENS_LANGFUSE_SECRET_KEY" ]; then
-    echo "Error: Langfuse isn't configured. Set it in /plugin → agentlens → Configure, then start a new session."
-    exit 1
-fi
+. "$(dirname "${BASH_SOURCE[0]}")/../../scripts/require_settings.sh"
+require_settings "Langfuse host=AGENTLENS_LANGFUSE_HOST" "Langfuse public key=AGENTLENS_LANGFUSE_PUBLIC_KEY" \
+    "Langfuse secret key=AGENTLENS_LANGFUSE_SECRET_KEY"
 
 api() {
     curl -sSf -u "${AGENTLENS_LANGFUSE_PUBLIC_KEY}:${AGENTLENS_LANGFUSE_SECRET_KEY}" \
