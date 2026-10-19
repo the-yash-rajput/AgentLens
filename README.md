@@ -2,7 +2,7 @@
 
 `/rca <ticket_id>` root-causes a production issue from its Zendesk ticket. It reads the Zendesk conversation and triggers, the Langfuse traces (the ticket ID is the session ID), Sentry errors, and a map of hcv2, DRM and turtle-doc. It runs from any folder; you don't need the DRM repo.
 
-The report gives a timeline, the root cause, the evidence, the repo that owns the fix, and anything it couldn't check.
+The report gives the root cause, a confidence level (High, Medium or Low), and a summary: timeline, evidence, the repo that owns the fix, and anything it couldn't check. If Zendesk, Langfuse and Sentry don't confirm the cause, it asks you for the agent's export JSON, then for logs.
 
 ## Needs
 
@@ -14,7 +14,8 @@ The report gives a timeline, the root cause, the evidence, the repo that owns th
 Once it's rolled out, it comes with your Claude org account. Until then, if you have access to this repo, run this in Claude Code:
 
 ```
-/plugin install agentlens --marketplace the-yash-rajput/AgentLens
+/plugin marketplace add the-yash-rajput/AgentLens
+/plugin install agentlens@agentlens
 ```
 
 ## Set up

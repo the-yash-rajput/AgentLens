@@ -1,6 +1,6 @@
 ---
 name: rca
-description: Root-cause a production issue anchored to a Zendesk ticket ID. Pulls the Zendesk conversation and the config of any implicated trigger/webhook, the matching Langfuse trace (ticket ID = session_id), Sentry errors in the same window, optionally Kibana/ES logs, and walks sibling repos via the repo map. Use when the user gives a ticket ID and asks what went wrong.
+description: Root-cause a production issue anchored to a Zendesk ticket ID. Pulls the Zendesk conversation and the config of any implicated trigger/webhook, the matching Langfuse trace (ticket ID = session_id), Sentry errors in the same window, then asks for the agent export JSON and logs only if the cause is still unconfirmed, and walks sibling repos via the repo map. Use when the user gives a ticket ID and asks what went wrong.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-ticket-review/zendesk_ticket_review.sh *)
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-admin/zendesk_admin_lookup.sh *)
@@ -11,7 +11,9 @@ allowed-tools:
 
 Input: a Zendesk ticket ID (and optionally a symptom description).
 
-Work through sources in this order — each one narrows or confirms the next step, don't skip ahead.
+The goal is to pinpoint the exact issue. Work through sources in this order — each one narrows or confirms the next step, don't skip ahead.
+
+Sources 1-3 (Zendesk, Langfuse, Sentry) need nothing from the user. If they confirm the root cause with direct evidence, go straight to Synthesis. If not, ask the user, one ask at a time and waiting for the answer: first for the agent export (Source 4), then, only if the cause is still not confirmed, for logs (Source 5).
 
 Every source except Zendesk is optional. If one isn't configured, isn't connected, or answers 401/403, list it under **Not checked** in the report and keep going.
 
@@ -54,7 +56,7 @@ Run the `langfuse-traces` skill with `--trace <trace_id>` for the failing run. I
 2. **Where did a value first go wrong?** Walk forward to the first node whose output is wrong. That node's prompt or code is the fix, not a later node that consumed it.
 3. **Did it stop early?** If the last observation errored, its `statusMessage` is the failure. Get the full exception from Sentry (Source 3).
 
-A developer can paste the Agent Crafter export of that `agent_version` to check the failing node's prompt, config and edges. Without it, name the node and the version, and leave the fix to the agent's owner.
+Note the agent key and `agent_version` from the trace metadata: Source 4 asks for that exact export if the trace alone doesn't confirm the cause.
 
 ## Source 3 — Sentry (when the trace shows an error, a gap, or nothing at all)
 
@@ -72,7 +74,18 @@ How:
 
 Check memory for known Sentry short IDs and known masking errors (e.g. a `max_tokens` error that hides a different cause) before treating an issue as new. Read-only: never call `update_issue_status` unless the user asks.
 
-## Source 4 — Kibana / production logs (on demand, ask the user)
+## Source 4 — Agent export JSON (ask the user when Sources 1-3 don't confirm the cause)
+
+Ask for the export of the exact version that ran, named from the trace metadata, e.g. "Please paste the Agent Crafter export JSON of `<agent_key>` version `<agent_version>` (export it from Agent Crafter, or `GET /api/ac/agents/<agent_key>/versions/<agent_version>/export`)." Skip this source when there's no trace: the agent never ran, so its definition can't explain the issue.
+
+With the export:
+- Read the prompt, config and `llm_id` of the first node whose output went wrong (2b step 2).
+- Check each edge condition against the routing value the trace shows at that point (2b step 1).
+- Check the `state_schema` field the failing node read or wrote: a missing or misnamed key shows up as an empty or default value downstream.
+
+If the user can't provide it, list it under **Not checked**, name the node and version, and go on to Source 5.
+
+## Source 5 — Kibana / production logs (ask the user when the cause is still not confirmed)
 
 No standalone "Kibana API" — Kibana is a UI over Elasticsearch. If the user has a read-only ES API key scoped to the relevant index, request: ES host/URL, index pattern, API key — then query `_search` directly instead of asking each time.
 
@@ -81,24 +94,30 @@ Otherwise: **ask the user** for logs, giving them a specific, minimal ask — no
 - Time window (from Source 1-3 timestamps)
 - One or two keywords to grep (ticket ID, case ID, error string, correlation ID from the trace or Sentry event)
 
-Only invoke this source when Sources 1-3 leave a gap — e.g. Langfuse shows DRM called turtle-doc but no response ever came back, so you need turtle-doc's own logs to see if it 500'd.
+Only invoke this source when Sources 1-4 leave a gap — e.g. Langfuse shows DRM called turtle-doc but no response ever came back, so you need turtle-doc's own logs to see if it 500'd.
 
 If the user can't pull logs either (ops usually can't), put that minimal ask under **Not checked** so a developer can run it.
 
-## Source 5 — Repo map for cross-service movement
+## Source 6 — Repo map for cross-service movement
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/repo-map.md`. For anything between Zendesk, hcv2 and DRM (triggers, routing, the classification config table, AB experiments), also read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/email_flow.md` (email tickets) or `api_flow.md` (Help Center tickets). Each ends with a code map. Once Sources 1-4 point at a specific boundary (e.g. "DRM sent extraction request, hcv2 never got the reply"), use them to find the actual sibling repo code:
+Read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/repo-map.md`. For anything between Zendesk, hcv2 and DRM (triggers, routing, the classification config table, AB experiments), also read `${CLAUDE_PLUGIN_ROOT}/skills/rca/references/email_flow.md` (email tickets) or `api_flow.md` (Help Center tickets). Each ends with a code map. Once Sources 1-5 point at a specific boundary (e.g. "DRM sent extraction request, hcv2 never got the reply"), use them to find the actual sibling repo code:
 - hcv2, data-extraction-be, turtle-configs, sre-tools — repos, branches, verified queue/API links all documented there.
-- Read code only where the user has the repo cloned: ask once for the local path. For deep dives, spawn one fresh `general-purpose` subagent per suspect repo with a self-contained prompt: repo path, the exact symptom, correlation ID, and what Sources 1-4 already established. Launch in parallel if multiple repos are implicated.
+- Read code only where the user has the repo cloned: ask once for the local path. For deep dives, spawn one fresh `general-purpose` subagent per suspect repo with a self-contained prompt: repo path, the exact symptom, correlation ID, and what Sources 1-5 already established. Launch in parallel if multiple repos are implicated.
 - Without a clone, cite the files from the map and the code maps, and name the repo that owns the fix.
 
 ## Synthesis
 
-Produce:
-1. Timeline: what happened, in order, across Zendesk → hcv2 → DRM → (turtle-doc/other) → back, with timestamps.
-2. Root cause: which service, which file/config/trigger, and why.
-3. Evidence: cite the specific audit event / trigger condition / trace observation / Sentry event / log line that proves it — don't hand-wave.
-4. Fix owner: which repo this needs to be fixed in.
-5. Not checked: each source you couldn't reach and why (not configured, not connected, 401/403, no logs), plus the minimal log ask for a developer.
-6. Repo-map additions: any new DRM ↔ sibling-repo link (queue, endpoint, config key) confirmed during this RCA — verified facts only — so a maintainer can add it to the plugin's repo map.
+The report has three parts, in this order:
+
+1. **Root cause**: one or two sentences naming the exact service, file/config/trigger/node, and why it failed. If it isn't pinned down, give the most likely cause and what it's narrowed to.
+2. **Confidence**: High, Medium or Low, with one line on why.
+   - High: direct evidence tied to this ticket shows the failure (a trace observation, trigger condition, agent-export node or edge, Sentry event, or log line).
+   - Medium: the evidence points at it, but one link is inferred (e.g. a timestamp match only, or the export or logs weren't available).
+   - Low: the best hypothesis left; key sources weren't checked.
+3. **Summary**:
+   - Timeline: what happened, in order, across Zendesk → hcv2 → DRM → (turtle-doc/other) → back, with timestamps.
+   - Evidence: cite the specific audit event / trigger condition / trace observation / export node / Sentry event / log line that proves it — don't hand-wave.
+   - Fix owner: which repo this needs to be fixed in (or the agent and version, for an Agent Crafter fix).
+   - Not checked: each source you couldn't reach and why (not configured, not connected, 401/403, export or logs not provided), plus the minimal ask for a developer.
+   - Repo-map additions: any new DRM ↔ sibling-repo link (queue, endpoint, config key) confirmed during this RCA — verified facts only — so a maintainer can add it to the plugin's repo map.
 
