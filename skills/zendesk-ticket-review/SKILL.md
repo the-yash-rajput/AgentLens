@@ -1,5 +1,6 @@
 ---
 name: zendesk-ticket-review
+argument-hint: "[ticket_id]"
 description: Given a Zendesk ticket ID, pull the full ticket record, conversation, audit trail (which triggers/automations fired), metrics, and satisfaction rating, then summarize what happened. Use when asked to review, investigate, or explain a specific Zendesk ticket.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-ticket-review/zendesk_ticket_review.sh *)

@@ -1,5 +1,6 @@
 ---
 name: rca
+argument-hint: "[ticket_id or session_id] [symptom]"
 description: Root-cause a production issue anchored to a Zendesk ticket ID. Pulls the Zendesk conversation and the config of any implicated trigger/webhook, the matching Langfuse trace (ticket ID = session_id), Sentry errors in the same window, then asks for the agent export JSON and logs only if the cause is still unconfirmed, and walks sibling repos via the repo map. Use when the user gives a ticket ID and asks what went wrong.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-ticket-review/zendesk_ticket_review.sh *)
@@ -9,7 +10,7 @@ allowed-tools:
 
 # /rca — Ticket-anchored production RCA
 
-Input: a Zendesk ticket ID (and optionally a symptom description).
+Input: a Zendesk ticket ID (and optionally a symptom description). The ticket ID is also the Langfuse session ID, so either works. If none was given, ask for it before doing anything else.
 
 The goal is to pinpoint the exact issue. Work through sources in this order — each one narrows or confirms the next step, don't skip ahead.
 

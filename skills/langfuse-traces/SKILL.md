@@ -1,5 +1,6 @@
 ---
 name: langfuse-traces
+argument-hint: "[session_id] [limit] or --trace [trace_id]"
 description: Fetch Langfuse traces for a given session ID via the Langfuse public API, or one trace with its observations. Use when asked to look up, inspect, or debug a session's trace/observation history in Langfuse.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/langfuse-traces/langfuse_traces.sh *)

@@ -1,5 +1,6 @@
 ---
 name: zendesk-admin
+argument-hint: "trigger|webhook|search [id or title]"
 description: Read-only lookup of the Zendesk rules behind a ticket's audit trail. Gets a trigger's conditions and actions, a webhook's status and endpoint, or searches triggers by title. Use when an RCA needs to know why a Zendesk trigger or webhook did or didn't fire.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-admin/zendesk_admin_lookup.sh *)
