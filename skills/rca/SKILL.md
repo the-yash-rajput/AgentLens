@@ -122,3 +122,4 @@ The report has three parts, in this order:
    - Not checked: each source you couldn't reach and why (not configured, not connected, 401/403, export or logs not provided), plus the minimal ask for a developer.
    - Repo-map additions: any new DRM ↔ sibling-repo link (queue, endpoint, config key) confirmed during this RCA — verified facts only — and any fact in the references that turned out stale (an ID, a trigger condition). When there are any, end the report with a ready-to-paste GitHub issue for `the-yash-rajput/AgentLens`: title `Repo-map: <one-line summary> (ticket <id>)`, body listing each fact, its evidence and the reference file it belongs in. The maintainer folds open issues into the references at each release.
 
+To fix an Agent Crafter agent and test the fix, run `/heal`.

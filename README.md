@@ -40,9 +40,17 @@ For Sentry, run `/mcp`, pick `sentry` and sign in with your Sentry account. With
 /rca 7116515
 ```
 
+To also fix the agent and test the fix, run:
+
+```
+/heal 7116515
+```
+
+`/heal` first asks a fixed set of questions: what went wrong, what was expected, example tickets, the agent's export JSON, the time window, run IDs, and the SOP or PRD. It then runs the RCA and shows you the root cause and the exact node or edge change. Only after you say yes does it build the fix as a new draft version and test your tickets against it. It never touches the live version or creates tickets. Building and testing need the tm-agent-crafter plugin installed and connected.
+
 Each step also works on its own: `/agentlens:zendesk-ticket-review <ticket_id>`, `/agentlens:zendesk-admin trigger <id>`, `/agentlens:langfuse-traces <session_id>`.
 
 ## Good to know
 
-- Everything is read-only. The scripts only send GET requests.
+- AgentLens's own scripts are read-only and only send GET requests. `/heal` writes to Agent Crafter, through tm-agent-crafter, only after you say yes, and only as a new draft version.
 - Any command run in the same Claude session can read the tokens, so use read-only ones.
