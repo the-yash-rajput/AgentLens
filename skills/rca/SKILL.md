@@ -77,7 +77,7 @@ Check memory for known Sentry short IDs and known masking errors (e.g. a `max_to
 
 ## Source 4 — Agent export JSON (ask the user when Sources 1-3 don't confirm the cause)
 
-Ask for the export of the exact version that ran, named from the trace metadata, e.g. "Please paste the Agent Crafter export JSON of `<agent_key>` version `<agent_version>` (export it from Agent Crafter, or `GET /api/ac/agents/<agent_key>/versions/<agent_version>/export`)." Skip this source when there's no trace: the agent never ran, so its definition can't explain the issue.
+First fetch it yourself: if tm-agent-crafter is connected (ToolSearch `+tm-agent-crafter`), call `get_agent(<agent_key>, <agent_version>)` and `get_run(run_id)` for the run's `state_snapshots`. Ask the user only if that isn't available. Then ask for the export of the exact version that ran, named from the trace metadata, e.g. "Please paste the Agent Crafter export JSON of `<agent_key>` version `<agent_version>` (export it from Agent Crafter, or `GET /api/ac/agents/<agent_key>/versions/<agent_version>/export`)." Skip this source when there's no trace: the agent never ran, so its definition can't explain the issue.
 
 With the export:
 - Read the prompt, config and `llm_id` of the first node whose output went wrong (2b step 2).

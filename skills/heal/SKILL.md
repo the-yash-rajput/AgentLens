@@ -16,17 +16,19 @@ The goal is to pinpoint the exact issue in a live Agent Crafter agent, agree the
 
 ## 01 Collect (mandatory, before any tool call)
 
-Ask all of these in one message and wait for the answers. Don't call any tool and don't start the RCA until 1–4 are answered. 5–7 may be "don't know".
+Ask all of these in one message and wait for the answers. Don't start the RCA until 1–4 are answered. 5–7 may be "don't know". The only tool calls allowed before then are the tm-agent-crafter lookups for 4 below.
 
 1. What went wrong?
 2. What was the expectation?
 3. Example ticket(s), as Zendesk IDs. If the user passed IDs as the argument, list them and ask them to confirm or add more.
-4. The agent's export JSON of its live version: paste it, or give a file path. AgentLens can't read agents from DRM yet, so this is the only source of the agent definition.
+4. The agent definition. **Fetch it yourself first** through tm-agent-crafter (load its tools via ToolSearch `+tm-agent-crafter`): `get_run(run_id)` for any run ID you have, then `get_agent(key)` (key from the user, the failure alert or the trace metadata; `list_agents(search=…)` if it's unknown). Ask the user for the export JSON (paste or file path) only when tm-agent-crafter isn't installed or connected, or the key can't be found.
 5. Time window of the failures.
 6. Run IDs, if the reporter has them.
 7. The agent's SOP or PRD, if any (paste or link).
 
-From the export, pin the agent `key` and the live `version_number` and say them back. Every later stage works against that version.
+Pin the agent `key` and the `version_number` that failed and say them back. `get_agent` without a version returns the latest one, which may not be the version that ran. If the failing run or trace shows the version, use it. If it can't be confirmed, say that you assumed the latest. Every later stage works against that version.
+
+All Crafter work (fetching, diffing versions, building, validating, running) goes through tm-agent-crafter. A `get_agent` payload is large, so read it with `jq` from the saved file. Comparing it with the previous version (`get_agent(key, <previous semver>)`) is often the fastest way to find a regression.
 
 ## 02 Root cause analysis
 
