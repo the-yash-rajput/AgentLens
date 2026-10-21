@@ -14,6 +14,22 @@ The goal is to pinpoint the exact issue in a live Agent Crafter agent, agree the
 
 `/rca` (`${CLAUDE_PLUGIN_ROOT}/skills/rca/SKILL.md`) holds the detailed guidance for reading each source. This skill points at its sections instead of repeating them.
 
+## Progress bar
+
+Print this block at the start of your reply whenever a stage starts, finishes, or loops back. Print it nowhere else.
+
+```
+━━ /heal · <agent_key or "agent ?"> · ticket <ids> ━━
+✅ 01 Collect  ✅ 02 RCA  ⏸ 03 Confirm  ○ 04 Build  ○ 05 Test
+[██████░░░░░░░░░] 2/5
+02 RCA ✅ root cause: stray `if` in ingest_request (High)
+```
+
+- ✅ done · ▶ running · ○ not started · ⏸ waiting on the user · ❌ stopped (with the reason on the next line).
+- Bar: 15 cells, filled = round(15 × done / 5), followed by `done/5`.
+- Under the bar, give the stage that just finished as a single line: its result in a few words.
+- Loop-back: mark the stage you return to with ↺, and add one line saying why and which round, e.g. `↺ Confirm = no → back to 01 (round 2)` or `↺ Test failed → back to 04 (round 2/3)`. Stages after the stage you return to go back to ○.
+
 ## 01 Collect (mandatory, before any tool call)
 
 Ask all of these in one message and wait for the answers. Don't start the RCA until 1–4 are answered. 5–7 may be "don't know". The only tool calls allowed before then are the tm-agent-crafter lookups for 4 below.
@@ -29,6 +45,8 @@ Ask all of these in one message and wait for the answers. Don't start the RCA un
 Pin the agent `key` and the `version_number` that failed and say them back. `get_agent` without a version returns the latest one, which may not be the version that ran. If the failing run or trace shows the version, use it. If it can't be confirmed, say that you assumed the latest. Every later stage works against that version.
 
 All Crafter work (fetching, diffing versions, building, validating, running) goes through tm-agent-crafter. A `get_agent` payload is large, so read it with `jq` from the saved file. Comparing it with the previous version (`get_agent(key, <previous semver>)`) is often the fastest way to find a regression.
+
+Then print the progress bar.
 
 ## 02 Root cause analysis
 
@@ -46,6 +64,8 @@ Produce:
 - **Proposed fix as a node or edge diff** against the export JSON: node or edge name, the exact field, old value → new value. Prompt edits as a before/after of the changed lines only.
 - **Confidence** (High / Medium / Low, as defined in `/rca` Synthesis) and anything still unexplained.
 
+Then print the progress bar. 03 shows ⏸ while you wait for the yes or no.
+
 ## 03 Confirm with the user
 
 Show the four items from Stage 02 and ask: "Apply this fix as a new draft version of `<key>`?"
@@ -61,6 +81,8 @@ Show the four items from Stage 02 and ask: "Apply this fix as a new draft versio
 
   Then go back to 01 with the added input (keep the earlier RCA as context, don't start from zero) and rerun 02.
 
+Then print the progress bar.
+
 ## 04 Build the fix (hand over to tm-agent-crafter)
 
 Load the `tm-agent-crafter:agent-crafter` skill, and its MCP tools via ToolSearch (`+tm-agent-crafter`). If the plugin isn't installed or its server isn't connected, stop here: give the user the frozen diff, the agent key and the live version for the agent's owner to apply, and tell them to run `/mcp` to reconnect `tm-agent-crafter`.
@@ -70,6 +92,8 @@ Load the `tm-agent-crafter:agent-crafter` skill, and its MCP tools via ToolSearc
 3. `update_agent(key, <next semver>, edited)` with `created_from_version_number` = the live version. Bump patch for a prompt tweak, minor for a new node or branch.
 4. `validate_agent(key)`, fix structural errors, repeat until clean. A fix to a validation error that changes behaviour beyond the frozen diff needs a new yes.
 5. Record the old and new version numbers.
+
+Then print the progress bar.
 
 Never edit or activate the live version. Stop and tell the user, rather than working around it, when the fix needs any of:
 - pandas or numpy in a `python_inline` node (not available in the sandbox);
@@ -90,7 +114,11 @@ A confidence-check HITL interrupt is a result, not a crash. Report the node, con
 
 If a check fails, go back to 04 with what differed. After 3 build-test rounds without a pass, stop and hand back to the user with what was tried.
 
+Then print the progress bar.
+
 ## Final report
+
+Start with the progress bar showing all ✅ (5/5), or ❌ on the stage that stopped.
 
 1. **Root cause**, **Confidence**, **Summary**: as in `/rca` Synthesis.
 2. **Fix:** the frozen diff, the old (live) version and the new draft version. The old version is the rollback.
