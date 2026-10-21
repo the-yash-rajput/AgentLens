@@ -90,6 +90,7 @@ Load the `tm-agent-crafter:agent-crafter` skill, and its MCP tools via ToolSearc
 1. `get_agent(key)`.
 2. Apply **only** the frozen diff to the returned JSON.
 3. `update_agent(key, <next semver>, edited)` with `created_from_version_number` = the live version. Bump patch for a prompt tweak, minor for a new node or branch.
+   If the payload is too large to send inline (the `get_agent` result was saved to a file), don't stop and don't ask again: the yes from Stage 03 covers creating the version. Apply the diff with `jq` or a script to a file in the scratchpad, assert that only the frozen fields changed, then run tm-agent-crafter's `scripts/import_version.sh <key> <next semver> <live version> <file>` (see its `references/payload.md` → Large payloads). If `CRAFTER_HOST` or `CRAFTER_API_KEY` is missing, ask the user to export them. Don't hunt for the key yourself.
 4. `validate_agent(key)`, fix structural errors, repeat until clean. A fix to a validation error that changes behaviour beyond the frozen diff needs a new yes.
 5. Record the old and new version numbers.
 
