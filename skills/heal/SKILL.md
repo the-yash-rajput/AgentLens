@@ -105,7 +105,7 @@ Never edit or activate the live version. Stop and tell the user, rather than wor
 
 For each example ticket:
 1. Rebuild the input: take the original run's input from the Langfuse trace (Stage 02). If there's no trace, use the customer's message from the Zendesk conversation.
-2. `run_agent` on the **new version**, never the live one. If `run_agent` can't target a specific version, stop and say so: testing would hit the live version, which proves nothing about the fix.
+2. `run_agent(key, message, version_number=<new version>)`, never the live one. Without `version_number` it runs the latest version, which is only the new one if nothing else was added since. Run tickets one at a time: if a call returns `status: "busy"`, wait `retry_after_seconds` and retry it.
 3. Check:
    - the expected node path was taken (node names in `state_snapshots`);
    - the output keys match the expectation from Stage 01;
