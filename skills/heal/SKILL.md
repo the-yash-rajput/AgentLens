@@ -1,7 +1,7 @@
 ---
 name: heal
 argument-hint: "[ticket_id ...]"
-description: Guided fix loop for a misbehaving Agent Crafter agent. Collects a fixed set of inputs, root-causes the failure from the agent JSON, Zendesk, Crafter run snapshots and Langfuse, confirms the fix with the user, then hands over to tm-agent-crafter to build it as a new draft version and test the reported tickets against it. Use when the user wants an agent fixed, not just a report; for a report only, use /rca.
+description: Guided fix loop for a misbehaving Agent Crafter agent. Looks up the inputs itself from Zendesk, Langfuse and Crafter, confirms them and asks only for what is missing, root-causes the failure from the agent JSON, Zendesk, Crafter run snapshots and Langfuse, confirms the fix with the user, then hands over to tm-agent-crafter to build it as a new draft version and test the reported tickets against it. Use when the user wants an agent fixed, not just a report; for a report only, use /rca.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-ticket-review/zendesk_ticket_review.sh *)
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-admin/zendesk_admin_lookup.sh *)
