@@ -30,6 +30,26 @@ Print this block at the start of your reply whenever a stage starts, finishes, o
 - Under the bar, give the stage that just finished as a single line: its result in a few words.
 - Loop-back: mark the stage you return to with ↺, and add one line saying why and which round, e.g. `↺ Confirm = no → back to 01 (round 2)` or `↺ Test failed → back to 04 (round 2/3)`. Stages after the stage you return to go back to ○.
 
+## Call log
+
+Every Zendesk, Langfuse and tm-agent-crafter call is shown in the chat, so the user can see what was read or changed. Before a call (or a parallel batch), print one line per call with the source, the call and its arguments, and why:
+
+```
+→ Zendesk   ticket review 48213 · customer conversation + audit
+→ Langfuse  traces session=48213 · find the failing run
+→ Crafter   get_agent(claims_triage, 1.4.2) · version that ran
+```
+
+After it returns, print one line per call with the result in a few words, or the error:
+
+```
+✓ Zendesk   48213 · 6 comments, trigger "AI reply" fired 10:42
+✓ Langfuse  3 traces · failing trace a1b2c3, agent_version 1.4.2
+✗ Crafter   not connected · skipped
+```
+
+Mark writes clearly (`update_agent`, `import_version.sh`, `run_agent`) with `⚠ write` after the arrow. Never print tokens, keys or auth headers.
+
 ## 01 Collect (fetch first, then ask)
 
 The argument is one or more Zendesk ticket IDs or Langfuse session IDs. A ticket ID **is** the Langfuse `session_id`, so either form gives both lookups.
