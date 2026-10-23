@@ -1,6 +1,6 @@
 ---
 name: heal
-argument-hint: "[ticket_id ...]"
+argument-hint: "[ticket_id or session_id ...]"
 description: Guided fix loop for a misbehaving Agent Crafter agent. Looks up the inputs itself from Zendesk, Langfuse and Crafter, confirms them and asks only for what is missing, root-causes the failure from the agent JSON, Zendesk, Crafter run snapshots and Langfuse, confirms the fix with the user, then hands over to tm-agent-crafter to build it as a new draft version and test the reported tickets against it. Use when the user wants an agent fixed, not just a report; for a report only, use /rca.
 allowed-tools:
   - Bash(bash ${CLAUDE_PLUGIN_ROOT}/skills/zendesk-ticket-review/zendesk_ticket_review.sh *)
@@ -30,17 +30,27 @@ Print this block at the start of your reply whenever a stage starts, finishes, o
 - Under the bar, give the stage that just finished as a single line: its result in a few words.
 - Loop-back: mark the stage you return to with ↺, and add one line saying why and which round, e.g. `↺ Confirm = no → back to 01 (round 2)` or `↺ Test failed → back to 04 (round 2/3)`. Stages after the stage you return to go back to ○.
 
-## 01 Collect (mandatory, before any tool call)
+## 01 Collect (fetch first, then ask)
 
-Ask all of these in one message and wait for the answers. Don't start the RCA until 1–4 are answered. 5–7 may be "don't know". The only tool calls allowed before then are the tm-agent-crafter lookups for 4 below.
+The argument is one or more Zendesk ticket IDs or Langfuse session IDs. A ticket ID **is** the Langfuse `session_id`, so either form gives both lookups.
 
-1. What went wrong?
-2. What was the expectation?
-3. Example ticket(s), as Zendesk IDs. If the user passed IDs as the argument, list them and ask them to confirm or add more.
-4. The agent definition. **Fetch it yourself first** through tm-agent-crafter (load its tools via ToolSearch `+tm-agent-crafter`): `get_run(run_id)` for any run ID you have, then `get_agent(key)` (key from the user, the failure alert or the trace metadata; `list_agents(search=…)` if it's unknown). Ask the user for the export JSON (paste or file path) only when tm-agent-crafter isn't installed or connected, or the key can't be found.
-5. Time window of the failures.
-6. Run IDs, if the reporter has them.
-7. The agent's SOP or PRD, if any (paste or link).
+**Fetch, in parallel, before asking anything:**
+- **Zendesk:** `zendesk-ticket-review` on each ID that looks like a ticket ID (numeric). Gives the customer's message, the reply they got, the audit trail and the time window.
+- **Langfuse:** `langfuse-traces <id>` for each ID, then `--trace <trace_id>` for the failing trace. Gives the run's input and output, the agent key, `agent_version` and run ID from the metadata, and the ticket ID when the argument was a session ID.
+- **Crafter**, if tm-agent-crafter is connected (load its tools via ToolSearch `+tm-agent-crafter`): `get_run(run_id)` for each run ID found, then `get_agent(key, version)` with the key and version from the trace (`list_agents(search=…)` if only a name is known).
+
+A source that is down or not configured is skipped and noted, never a reason to stop. These are reads only; the RCA itself still waits for the answers below.
+
+**Then ask, in one message**, showing what was found next to each item so the user only confirms or corrects:
+
+1. What went wrong? Draft it from the Zendesk conversation and trace output.
+2. What was the expectation? Usually unknown from the data; ask plainly.
+3. Example ticket(s): list the ones found, ask to confirm or add more.
+4. The agent: key, version and run IDs found. Ask for the export JSON (paste or file path) only if tm-agent-crafter isn't connected or the key couldn't be found.
+5. Time window: from the ticket and trace timestamps.
+6. The agent's SOP or PRD, if any (paste or link).
+
+Wait for the reply. Don't start the RCA until 1–4 are confirmed; 5–6 may be "don't know".
 
 Pin the agent `key` and the `version_number` that failed and say them back. `get_agent` without a version returns the latest one, which may not be the version that ran. If the failing run or trace shows the version, use it. If it can't be confirmed, say that you assumed the latest. Every later stage works against that version.
 
@@ -50,7 +60,7 @@ Then print the progress bar.
 
 ## 02 Root cause analysis
 
-Read in this order. Each read narrows the next.
+Read in this order. Each read narrows the next. Reuse what Stage 01 already fetched; only fetch what's new (added tickets, other runs, a trigger or webhook).
 
 1. **Agent JSON, SOP, PRD (intent).** Work out the node path this case *should* take: the entry node, each edge condition it meets, the exit node, and the state keys each node should write.
 2. **Zendesk (what the customer saw).** Run `zendesk-ticket-review` on each example ticket, and `zendesk-admin` when the audit implicates a trigger or webhook. Follow `/rca` Source 1 and 1b. If the fault is fully in Zendesk config, say so: there's nothing to fix in Crafter, so report it and stop.
