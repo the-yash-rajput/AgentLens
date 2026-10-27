@@ -72,7 +72,7 @@ A source that is down or not configured is skipped and noted, never a reason to 
 
 Wait for the reply. Don't start the RCA until 1–4 are confirmed; 5–6 may be "don't know".
 
-Pin the agent `key` and the `version_number` that failed and say them back. `get_agent` without a version returns the latest one, which may not be the version that ran. If the failing run or trace shows the version, use it. If it can't be confirmed, say that you assumed the latest. Every later stage works against that version.
+A ticket's Quick Support comments can come from more than one agent (classifier, then the specialised agent), so first pin *which* agent wrote the wrong reply (`zendesk-ticket-review` → Which AI agent wrote each comment). Then pin the agent `key` and the `version_number` that failed and say them back. `get_agent` without a version returns the latest one, which may not be the version that ran. If the failing run or trace shows the version, use it. If it can't be confirmed, say that you assumed the latest. Every later stage works against that version.
 
 All Crafter work (fetching, diffing versions, building, validating, running) goes through tm-agent-crafter. A `get_agent` payload is large, so read it with `jq` from the saved file. Comparing it with the previous version (`get_agent(key, <previous semver>)`) is often the fastest way to find a regression.
 

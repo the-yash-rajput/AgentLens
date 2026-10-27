@@ -47,6 +47,7 @@ The ticket ID **is** the Langfuse `session_id`. Run the `langfuse-traces` skill 
 Look for:
 - Whether a trace exists at all for this ticket in this time window — if not, the issue happened before DRM got involved (points back to hcv2/Zendesk) or the message never reached the agent queue.
 - Failed/errored observations, unexpected tool calls, wrong tool args, LLM output that doesn't match what the requester saw in Zendesk, missing expected steps (e.g. classification called but extraction never triggered).
+- Which trace is the failing one. A session usually holds several runs from different agents (classifier first, then the specialised agent). Pick the trace of the agent that wrote the wrong Quick Support comment (see `zendesk-ticket-review` → Which AI agent wrote each comment), not just the latest or first trace.
 - Correlate trace timestamps against the Zendesk audit timeline from Source 1 — gaps between "hcv2 sent it" and "DRM processed it" (or DRM processed it but hcv2 never delivered the reply) tell you which side of the boundary the fault is on.
 
 ### 2b — Inside the agent graph (when the trace shows the agent itself went wrong)
