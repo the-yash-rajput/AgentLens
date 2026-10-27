@@ -9,6 +9,14 @@
       "name": "agentlens",
       "source": "./",
       "description": "Root-cause a production issue from its Zendesk ticket ID, without the DRM repo."
+    },
+    {
+      "name": "tm-agent-crafter",
+      "source": {
+        "source": "github",
+        "repo": "the-yash-rajput/tm-agent-crafter"
+      },
+      "description": "Build, validate and run Agent Crafter workflows. Installed with AgentLens; /heal builds fixes through it."
     }
   ]
 }

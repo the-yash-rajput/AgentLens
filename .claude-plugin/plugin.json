@@ -1,14 +1,20 @@
 {
   "name": "agentlens",
   "displayName": "AgentLens",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "Root-cause a production issue from its Zendesk ticket ID: Zendesk, Langfuse, Sentry and the cross-service map, from any machine.",
   "homepage": "https://github.com/the-yash-rajput/AgentLens",
   "repository": "https://github.com/the-yash-rajput/AgentLens",
   "author": {
     "name": "Turtlemint AI"
   },
-  "keywords": ["rca", "zendesk", "langfuse", "sentry", "agent-crafter"],
+  "keywords": [
+    "rca",
+    "zendesk",
+    "langfuse",
+    "sentry",
+    "agent-crafter"
+  ],
   "userConfig": {
     "zendesk_subdomain": {
       "type": "string",
@@ -24,8 +30,8 @@
     "zendesk_token": {
       "type": "string",
       "title": "Zendesk token",
-      "description": "A read-scoped OAuth token from a Zendesk admin (preferred), or an API token.",
-      "required": true,
+      "description": "A read-scoped OAuth token from a Zendesk admin (preferred), or an API token. Fallback when no workspace is active (see /lens-workspace).",
+      "required": false,
       "sensitive": true
     },
     "langfuse_host": {
@@ -37,15 +43,18 @@
     "langfuse_public_key": {
       "type": "string",
       "title": "Langfuse public key",
-      "description": "The pk-lf-... half of the RCA key pair.",
-      "required": true
+      "description": "The pk-lf-... half of the RCA key pair. Fallback when no workspace is active (see /lens-workspace).",
+      "required": false
     },
     "langfuse_secret_key": {
       "type": "string",
       "title": "Langfuse secret key",
-      "description": "The sk-lf-... half of the RCA key pair.",
-      "required": true,
+      "description": "The sk-lf-... half of the RCA key pair. Fallback when no workspace is active (see /lens-workspace).",
+      "required": false,
       "sensitive": true
     }
-  }
+  },
+  "dependencies": [
+    "tm-agent-crafter"
+  ]
 }

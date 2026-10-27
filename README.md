@@ -18,6 +18,8 @@ Once it's rolled out, it comes with your Claude org account. Until then, if you 
 /plugin install agentlens@agentlens
 ```
 
+This also installs the latest tm-agent-crafter, which `/heal` builds and tests fixes through, and keeps it updated with AgentLens. If you already installed tm-agent-crafter from its own marketplace, you'll have two copies; disable one in `/plugin`.
+
 ## Set up
 
 When you enable the plugin, Claude Code asks for these settings:
@@ -33,6 +35,24 @@ When you enable the plugin, Claude Code asks for these settings:
 The token and the Langfuse secret key are kept in your OS keychain, not in a file. To change any setting later, use `/plugin` → agentlens → Configure, then start a new session.
 
 For Sentry, run `/mcp`, pick `sentry` and sign in with your Sentry account. Without it, the report lists Sentry as not checked.
+
+## Workspaces
+
+A workspace is one environment's Zendesk, Langfuse and Agent Crafter settings, for example prod, staging, or a Zendesk sandbox. You can keep as many as you like and switch between them. You don't need a restart: the next AgentLens call uses the new workspace, and each script prints which workspace it used.
+
+```
+/lens-workspace                  list them, * marks the active one
+/lens-workspace <name>           switch
+/lens-workspace add <name>       add one, or update it
+/lens-workspace remove <name>
+```
+
+`add` asks for each value in turn: Zendesk subdomain, email and token, then Langfuse host, public key and secret key, then Agent Crafter host and API key. If you leave a value blank, it falls back to the plugin setting, so a staging workspace can set only the three Langfuse values. The first workspace you add becomes active. When none is active, AgentLens uses the plugin settings above. Workspaces are stored in `~/.config/agentlens/workspaces.json` (mode 600), never in the repo.
+
+> Values you type in chat stay in that chat's transcript. To keep the token and secret keys out of it, run the script yourself. It hides them as you type:
+> `! bash <plugin dir>/scripts/agentlens_workspace.sh add <name>`
+
+`/heal` builds and tests through tm-agent-crafter. A workspace's Agent Crafter host and API key (`drm_pub_xxx.drm_sk_xxx`; enter both or neither) are saved as a tm-agent-crafter workspace of the same name, so switching or removing it with `/lens-workspace` switches or removes it there too. `/crafter-workspace` still works on its own.
 
 ## Use
 
