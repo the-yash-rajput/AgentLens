@@ -54,6 +54,8 @@ A workspace is one environment's Zendesk, Langfuse and Agent Crafter settings, f
 
 `/heal` builds and tests through tm-agent-crafter. A workspace's Agent Crafter host and API key (`drm_pub_xxx.drm_sk_xxx`; enter both or neither) are saved as a tm-agent-crafter workspace of the same name, so switching or removing it with `/lens-workspace` switches or removes it there too. `/crafter-workspace` still works on its own.
 
+The status line always shows the active workspace, as `AgentLens: staging`. If tm-agent-crafter is pointed at a different one, for example after a `/crafter-workspace` switch, it shows both: `AgentLens: staging · Crafter: local`. It updates within a few seconds of a switch.
+
 ## Use
 
 ```
