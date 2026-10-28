@@ -1,7 +1,7 @@
 ---
 description: List, switch, add or remove AgentLens workspaces (Zendesk + Langfuse + Agent Crafter settings per environment)
 argument-hint: "[name] | add <name> | remove <name>"
-allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*)
+allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*), Bash(osascript:*)
 ---
 
 Manage AgentLens workspaces with `${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh`.
@@ -18,8 +18,9 @@ Map the arguments to exactly one script call and run it:
 
 `add <name>`: collect the values in chat and add the workspace yourself. Don't hand the user a command to run.
 - Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh list` first; if a host there fits, mention it.
-- Then send one message offering two ways: fill in the block below and send it back, or reply
-  `one by one` to be asked each key in turn. Show this block, with the keys exactly as written, and the notes below it.
+- Then send one message offering three ways: fill in the block below and send it back, reply
+  `one by one` to be asked each key in turn, or reply `window` to type the values hidden in a terminal
+  window you open for them. Show this block, with the keys exactly as written, and the notes below it.
   ```
   zendesk_subdomain=
   zendesk_email=
@@ -33,8 +34,12 @@ Map the arguments to exactly one script call and run it:
   - Leave a line empty or out to use the plugin setting.
   - `crafter_host` and `crafter_api_key` (`drm_pub_xxx.drm_sk_xxx`) go together or not at all; they're
     saved as a tm-agent-crafter workspace of the same name, so `/heal` builds against the same environment.
-  - Values typed here stay in the chat transcript; for hidden input, run
-    `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` in a real terminal instead (path written out in full).
+  - Values typed here stay in the chat transcript; `window` keeps the token and secret keys hidden and out of it.
+- Window: on macOS, open Terminal running the script's own prompts (they hide the secrets):
+  `osascript -e 'tell application "Terminal" to do script "bash " & quoted form of "${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh" & " add <name>"' -e 'tell application "Terminal" to activate'`
+  Say a Terminal window opened, and to reply `done` once it prints `Added`/`Updated`. Then run
+  `list` and show it. Not macOS, or osascript fails: give the
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` command, path written out in full, to run in a terminal.
 - One by one: ask one key per message, in block order, showing the key name, e.g.
   `zendesk_subdomain? (skip = plugin setting)`. `skip`, `-` or an empty-looking reply means use the plugin
   setting. Skip `crafter_api_key` when `crafter_host` was skipped.
