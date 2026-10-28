@@ -12,8 +12,9 @@ trap 'rm -rf "$TMP"' EXIT
 TOKEN=$'a b"c\'d$e`f\\g;h&i|j*k\nl'
 SECRET='sk-lf-$(touch '"$TMP"'/pwned)'
 
-CLAUDE_ENV_FILE="$TMP/session_env" CLAUDE_PLUGIN_DATA="$TMP/data" \
+HOME="$TMP" CLAUDE_ENV_FILE="$TMP/session_env" CLAUDE_PLUGIN_DATA="$TMP/data" \
     CLAUDE_PLUGIN_OPTION_ZENDESK_TOKEN="$TOKEN" CLAUDE_PLUGIN_OPTION_LANGFUSE_SECRET_KEY="$SECRET" \
+    CLAUDE_PLUGIN_OPTION_CRAFTER_HOST="https://drm.example.com/" CLAUDE_PLUGIN_OPTION_CRAFTER_API_KEY="drm_pub_a.drm_sk_b" \
     bash "$ROOT/scripts/export-env.sh"
 
 fail() { echo "FAIL: $1"; exit 1; }
@@ -28,4 +29,18 @@ want=$(AGENTLENS_ZENDESK_TOKEN="$TOKEN" AGENTLENS_LANGFUSE_SECRET_KEY="$SECRET" 
 ! grep -q "sk-lf" "$TMP/session_env" || fail "secret leaked into CLAUDE_ENV_FILE"
 [ "$(stat -f %Lp "$TMP/data/env.sh" 2>/dev/null || stat -c %a "$TMP/data/env.sh")" = 600 ] || fail "env.sh isn't owner-only"
 
-echo "ok: special characters survive, secrets stay out of CLAUDE_ENV_FILE, env.sh is 600"
+# The settings become the default workspace "prod": Crafter pair in both files, no Zendesk/Langfuse secrets.
+AL="$TMP/.config/agentlens/workspaces.json" CF="$TMP/.config/tm-agent-crafter/workspaces.json"
+[ "$(jq -c . "$AL")" = '{"active":"prod","workspaces":{"prod":{"crafter_host":"https://drm.example.com","crafter_api_key":"drm_pub_a.drm_sk_b"}}}' ] \
+    || fail "default workspace wrong: $(cat "$AL")"
+[ "$(jq -c . "$CF")" = '{"active":"prod","workspaces":{"prod":{"host":"https://drm.example.com","api_key":"drm_pub_a.drm_sk_b"}}}' ] \
+    || fail "tm-agent-crafter workspace wrong: $(cat "$CF")"
+[ "$(stat -f %Lp "$AL" 2>/dev/null || stat -c %a "$AL")" = 600 ] || fail "workspaces.json isn't owner-only"
+
+# A second session keeps what /lens-workspace added and the active choice.
+jq '.workspaces.prod.zendesk_subdomain = "sandbox" | .workspaces.stg = {} | .active = "stg"' "$AL" > "$AL.new" && mv "$AL.new" "$AL"
+HOME="$TMP" CLAUDE_ENV_FILE="$TMP/session_env" CLAUDE_PLUGIN_DATA="$TMP/data" bash "$ROOT/scripts/export-env.sh"
+[ "$(jq -c '[.active, .workspaces.prod.zendesk_subdomain, .workspaces.prod.crafter_host]' "$AL")" = '["stg","sandbox","https://drm.example.com"]' ] \
+    || fail "second session clobbered the workspace: $(cat "$AL")"
+
+echo "ok: special characters survive, secrets stay out of CLAUDE_ENV_FILE, env.sh is 600, default workspace saved"

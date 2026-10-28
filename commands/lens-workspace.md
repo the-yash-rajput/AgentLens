@@ -17,8 +17,9 @@ Map the arguments to exactly one script call and run it:
 | `remove <name>` | `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh remove <name>` |
 
 `add <name>`:
-- Don't run anything yet. Tell the user to run
-  `! bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>`: it asks for each value in
+- Don't run anything yet. Tell the user to run, in a terminal outside Claude Code (a `!` command has
+  no terminal input, so the prompts can't run there),
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` with the path written out in full: it asks for each value in
   turn (Zendesk subdomain, Zendesk email, Zendesk token, Langfuse host, Langfuse public key, Langfuse
   secret key, Agent Crafter host, Agent Crafter API key), hides the token and both secret keys, and keeps
   them out of this chat's transcript. Enter on a value falls back to the plugin setting. The Crafter

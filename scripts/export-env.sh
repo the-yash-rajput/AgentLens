@@ -31,3 +31,29 @@ VALUES="$CLAUDE_PLUGIN_DATA/env.sh"
 chmod 600 "$VALUES"
 
 printf 'if [ -f %q ]; then . %q; fi\n' "$VALUES" "$VALUES" >> "$CLAUDE_ENV_FILE"
+
+# The plugin settings double as a named workspace, so /lens-workspace can switch back to them.
+# Its Zendesk/Langfuse fields stay empty (they fall back to these settings, secrets stay in the
+# keychain); only the Crafter pair is written, because tm-agent-crafter reads it from its own file.
+# Values added later with `/lens-workspace add <name>` are kept; the Crafter pair follows the settings.
+NAME="${CLAUDE_PLUGIN_OPTION_WORKSPACE_NAME:-prod}"
+HOST="${CLAUDE_PLUGIN_OPTION_CRAFTER_HOST%/}"
+KEY="$CLAUDE_PLUGIN_OPTION_CRAFTER_API_KEY"
+[[ "$NAME" =~ ^[A-Za-z0-9_-]+$ ]] || exit 0
+[ -n "$HOST" ] && [ -n "$KEY" ] || HOST="" KEY=""
+
+upsert() {  # $1 file, $2 jq filter; same 600 temp-and-move write as agentlens_workspace.sh
+    local data tmp
+    data=$(cat "$1" 2>/dev/null || echo '{"active": null, "workspaces": {}}')
+    mkdir -p "$(dirname "$1")"
+    tmp=$(mktemp "$1.XXXXXX")
+    jq --arg n "$NAME" --arg h "$HOST" --arg k "$KEY" "$2" <<<"$data" > "$tmp" && mv "$tmp" "$1" || rm -f "$tmp"
+}
+
+upsert "$HOME/.config/agentlens/workspaces.json" \
+    '.workspaces[$n] = ((.workspaces[$n] // {}) + (if $h != "" then {crafter_host: $h, crafter_api_key: $k} else {} end)) | .active //= $n'
+if [ -n "$HOST" ]; then
+    upsert "$HOME/.config/tm-agent-crafter/workspaces.json" \
+        '.workspaces[$n] = {host: $h, api_key: $k} | .active //= $n'
+fi
+exit 0

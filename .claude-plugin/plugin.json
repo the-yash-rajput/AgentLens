@@ -16,6 +16,12 @@
     "agent-crafter"
   ],
   "userConfig": {
+    "workspace_name": {
+      "type": "string",
+      "title": "Default workspace name",
+      "description": "These settings are saved as a workspace with this name, so /lens-workspace can switch back to them. Letters, digits, - and _.",
+      "default": "prod"
+    },
     "zendesk_subdomain": {
       "type": "string",
       "title": "Zendesk subdomain",
@@ -50,6 +56,19 @@
       "type": "string",
       "title": "Langfuse secret key",
       "description": "The sk-lf-... half of the RCA key pair. Fallback when no workspace is active (see /lens-workspace).",
+      "required": false,
+      "sensitive": true
+    },
+    "crafter_host": {
+      "type": "string",
+      "title": "Agent Crafter host",
+      "description": "Base URL of the Agent Crafter (DRM) instance /heal builds against, no trailing slash. Saved as the default workspace for tm-agent-crafter too. Enter it with the API key below, or leave both empty.",
+      "required": false
+    },
+    "crafter_api_key": {
+      "type": "string",
+      "title": "Agent Crafter API key",
+      "description": "drm_pub_xxx.drm_sk_xxx, issued in Django admin under API Keys.",
       "required": false,
       "sensitive": true
     }
