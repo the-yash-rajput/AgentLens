@@ -1,7 +1,7 @@
 ---
 description: List, switch, add or remove AgentLens workspaces (Zendesk + Langfuse + Agent Crafter settings per environment)
 argument-hint: "[name] | add <name> | remove <name>"
-allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*), Bash(osascript:*)
+allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*), AskUserQuestion
 ---
 
 Manage AgentLens workspaces with `${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh`.
@@ -16,48 +16,25 @@ Map the arguments to exactly one script call and run it:
 | `add <name>` | see below |
 | `remove <name>` | `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh remove <name>` |
 
-`add <name>`: collect the values in chat and add the workspace yourself. Don't hand the user a command to run.
-- Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh list` first; if a host there fits, mention it.
-- Then send one message offering three ways: fill in the block below and send it back, reply
-  `one by one` to be asked each key in turn, or reply `window` to type the values hidden in a terminal
-  window you open for them. Show this block, with the keys exactly as written, and the notes below it.
-  ```
-  zendesk_subdomain=
-  zendesk_email=
-  zendesk_token=
-  langfuse_host=
-  langfuse_public_key=
-  langfuse_secret_key=
-  crafter_host=
-  crafter_api_key=
-  ```
-  - Leave a line empty or out to use the plugin setting.
-  - `crafter_host` and `crafter_api_key` (`drm_pub_xxx.drm_sk_xxx`) go together or not at all; they're
-    saved as a tm-agent-crafter workspace of the same name, so `/heal` builds against the same environment.
-  - Values typed here stay in the chat transcript; `window` keeps the token and secret keys hidden and out of it.
-- Window: on macOS, open Terminal running the script's own prompts (they hide the secrets):
-  `osascript -e 'tell application "Terminal" to do script "bash " & quoted form of "${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh" & " add <name>"' -e 'tell application "Terminal" to activate'`
-  Say a Terminal window opened, and to reply `done` once it prints `Added`/`Updated`. Then run
-  `list` and show it. Not macOS, or osascript fails: give the
-  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` command, path written out in full, to run in a terminal.
-- One by one: ask one key per message, in block order, showing the key name, e.g.
-  `zendesk_subdomain? (skip = plugin setting)`. `skip`, `-` or an empty-looking reply means use the plugin
-  setting. Skip `crafter_api_key` when `crafter_host` was skipped.
-- Read replies loosely; the user needn't match the block. Accept `key=value`, `key: value`, `key value`,
-  plain sentences ("zendesk is turtlemint"), loose key names (`subdomain`, `lf public`, `crafter key`),
-  and values with no key at all, placed by their shape:
-  `drm_pub_….drm_sk_…` → `crafter_api_key`, `pk-lf-…` → `langfuse_public_key`, `sk-lf-…` →
-  `langfuse_secret_key`, an email → `zendesk_email`, `….zendesk.com` or a bare word for Zendesk →
-  `zendesk_subdomain`, a URL with `langfuse` → `langfuse_host`, any other URL → `crafter_host`.
-  A value that can't be placed, or fits two keys: ask about just that one. Several values in one reply,
-  even in one-by-one mode, all count; then ask only for what's still missing, or finish if the user says
-  they're done.
-- Before running, list the keys you'll set (names only; non-secret values may be shown) and the ones
-  left to the plugin setting, in one line each. No confirmation needed unless something was guessed from shape alone.
-- Pipe the collected `key=value` lines on stdin, never as script arguments (empty ones are skipped):
+`add <name>`: ask with AskUserQuestion only and add the workspace yourself. No intro message, no
+key=value block, and don't hand the user a command to run.
+- Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh list` first, without commenting, to get the hosts already in use.
+- Three AskUserQuestion calls, in this order. Each question names its key (headers max 12 chars, so put
+  the key in the question text, e.g. "zendesk_subdomain for 'p2'?"):
+  1. Zendesk: `zendesk_subdomain` (the part before `.zendesk.com`), `zendesk_email`, `zendesk_token`
+  2. Langfuse: `langfuse_host`, `langfuse_public_key` (`pk-lf-…`), `langfuse_secret_key` (`sk-lf-…`)
+  3. Agent Crafter: `crafter_host`, `crafter_api_key` (`drm_pub_xxx.drm_sk_xxx`)
+
+  Every question's first option is `Use plugin setting` (leave the key out); host questions also offer
+  the hosts seen in `list`. The user types the value through "Other". On the token and secret-key
+  questions, the description says the value stays in this chat's transcript.
+- Read typed values loosely: trim them, cut `.zendesk.com` and trailing `/`. A value whose shape
+  clearly belongs to another key (e.g. `sk-lf-…` typed as the public key): ask about just that one.
+- The Crafter host and key go in together or not at all; if only one was given, ask that pair again.
+  They're saved as a tm-agent-crafter workspace of the same name, so `/heal` builds against the same environment.
+- Pipe the answers on stdin, one `key=value` per line, never as script arguments, leaving out skipped keys:
   `printf '%s\n' 'zendesk_subdomain=…' 'zendesk_email=…' 'zendesk_token=…' 'langfuse_host=…' 'langfuse_public_key=…' 'langfuse_secret_key=…' 'crafter_host=…' 'crafter_api_key=…' | bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>`
-- If the script rejects a value or the Crafter pair is incomplete, ask again for just those keys, in the
-  same `key=` form, and rerun.
+- If the script rejects a value, ask again for just that key with AskUserQuestion and rerun.
 - Don't repeat the token or either secret key anywhere in your reply.
 
 Rules:
