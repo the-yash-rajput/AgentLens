@@ -1,7 +1,7 @@
 ---
 description: List, switch, add or remove AgentLens workspaces (Zendesk + Langfuse + Agent Crafter settings per environment)
 argument-hint: "[name] | add <name> | remove <name>"
-allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*), AskUserQuestion
+allowed-tools: Bash(bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh:*), Bash(printf:*)
 ---
 
 Manage AgentLens workspaces with `${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh`.
@@ -16,21 +16,28 @@ Map the arguments to exactly one script call and run it:
 | `add <name>` | see below |
 | `remove <name>` | `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh remove <name>` |
 
-`add <name>`: ask for the values here and add the workspace yourself. Don't hand the user a command to run.
-- Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh list` first, to offer hosts already in use as options.
-- Say once, in one line, that values entered here stay in the chat transcript (for hidden input they can
-  instead run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` in a real terminal, path written out in full).
-- Ask with AskUserQuestion, two calls of four questions:
-  1. Zendesk subdomain, Zendesk email, Zendesk token, Langfuse host
-  2. Langfuse public key, Langfuse secret key, Agent Crafter host, Agent Crafter API key (`drm_pub_xxx.drm_sk_xxx`)
-
-  Every question's first option is `Use plugin setting` (leave it out); host questions also offer the
-  hosts seen in `list`. The user types any other value through "Other". The Crafter host and key go in
-  together or not at all; if only one was given, ask again for the pair. They're saved as a
-  tm-agent-crafter workspace of the same name, so `/heal` builds against the same environment.
-- Pipe the answers on stdin, one `field=value` per line, never as script arguments, leaving out skipped fields:
+`add <name>`: ask for all the values in one message and add the workspace yourself. Don't hand the user a command to run.
+- Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh list` first; if a host there fits, mention it.
+- Then send one message: this block, with the keys exactly as written, and the notes below it.
+  ```
+  zendesk_subdomain=
+  zendesk_email=
+  zendesk_token=
+  langfuse_host=
+  langfuse_public_key=
+  langfuse_secret_key=
+  crafter_host=
+  crafter_api_key=
+  ```
+  - Leave a line empty or out to use the plugin setting.
+  - `crafter_host` and `crafter_api_key` (`drm_pub_xxx.drm_sk_xxx`) go together or not at all; they're
+    saved as a tm-agent-crafter workspace of the same name, so `/heal` builds against the same environment.
+  - Values typed here stay in the chat transcript; for hidden input, run
+    `bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>` in a real terminal instead (path written out in full).
+- Pipe the reply's `key=value` lines on stdin, never as script arguments (empty ones are skipped):
   `printf '%s\n' 'zendesk_subdomain=…' 'zendesk_email=…' 'zendesk_token=…' 'langfuse_host=…' 'langfuse_public_key=…' 'langfuse_secret_key=…' 'crafter_host=…' 'crafter_api_key=…' | bash ${CLAUDE_PLUGIN_ROOT}/scripts/agentlens_workspace.sh add <name>`
-- If the script rejects a value, ask again for just that field and rerun.
+- If the script rejects a value or the Crafter pair is incomplete, ask again for just those keys, in the
+  same `key=` form, and rerun.
 - Don't repeat the token or either secret key anywhere in your reply.
 
 Rules:
