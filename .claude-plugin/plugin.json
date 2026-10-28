@@ -1,7 +1,7 @@
 {
   "name": "agentlens",
   "displayName": "AgentLens",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Root-cause a production issue from its Zendesk ticket ID: Zendesk, Langfuse, Sentry and the cross-service map, from any machine.",
   "homepage": "https://github.com/the-yash-rajput/AgentLens",
   "repository": "https://github.com/the-yash-rajput/AgentLens",
